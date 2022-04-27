@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 from torch.autograd import Variable
 from .lovasz_losses import lovasz_softmax
-from ..models.pointrend import point_sample
+#from ..models.pointrend import point_sample
 from ..data.dataloader import datasets
 from ..config import cfg
 
@@ -396,22 +396,23 @@ class PointRendLoss(nn.CrossEntropyLoss):
         self.ignore_index = ignore_index
 
     def forward(self, *inputs, **kwargs):
-        result, gt = tuple(inputs)
-        
-        pred = F.interpolate(result["coarse"], gt.shape[-2:], mode="bilinear", align_corners=True)
-        seg_loss = F.cross_entropy(pred, gt, ignore_index=self.ignore_index)
-
-        gt_points = point_sample(
-            gt.float().unsqueeze(1),
-            result["points"],
-            mode="nearest",
-            align_corners=False
-        ).squeeze_(1).long()
-        points_loss = F.cross_entropy(result["rend"], gt_points, ignore_index=self.ignore_index)
-
-        loss = seg_loss + points_loss
-
-        return dict(loss=loss)
+        # result, gt = tuple(inputs)
+        #
+        # pred = F.interpolate(result["coarse"], gt.shape[-2:], mode="bilinear", align_corners=True)
+        # seg_loss = F.cross_entropy(pred, gt, ignore_index=self.ignore_index)
+        #
+        # gt_points = point_sample(
+        #     gt.float().unsqueeze(1),
+        #     result["points"],
+        #     mode="nearest",
+        #     align_corners=False
+        # ).squeeze_(1).long()
+        # points_loss = F.cross_entropy(result["rend"], gt_points, ignore_index=self.ignore_index)
+        #
+        # loss = seg_loss + points_loss
+        #
+        # return dict(loss=loss)
+        pass
 
 
 def get_segmentation_loss(model, use_ohem=False, **kwargs):

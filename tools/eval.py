@@ -33,10 +33,11 @@ class Evaluator(object):
         input_transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(cfg.DATASET.MEAN, cfg.DATASET.STD),
-        ])  
-
+        ])
+        data_kwargs = {'transform': input_transform,
+                       'root': "/Users/longquanchen/Desktop/Work/DeepLearning/Segment_Transparent_Objects/datasets/laserfiberBigData/SelectedVidsPostBlender"}
         # dataset and dataloader
-        val_dataset = get_segmentation_dataset(cfg.DATASET.NAME, split='test', mode='testval', transform=input_transform)
+        val_dataset = get_segmentation_dataset(cfg.DATASET.NAME, split='test', mode='testval', **data_kwargs)
         val_sampler = make_data_sampler(val_dataset, False, args.distributed)
         val_batch_sampler = make_batch_data_sampler(val_sampler, images_per_batch=cfg.TEST.BATCH_SIZE, drop_last=False)
         self.val_loader = data.DataLoader(dataset=val_dataset,

@@ -22,7 +22,7 @@ cfg.DATASET.STD = [0.5, 0.5, 0.5]
 # dataset ignore index
 cfg.DATASET.IGNORE_INDEX = -1
 # workers
-cfg.DATASET.WORKERS = 8
+cfg.DATASET.WORKERS = 0
 # val dataset mode
 cfg.DATASET.MODE = 'testval'
 ########################### data augment ######################################
@@ -62,6 +62,7 @@ cfg.TRAIN.SYNC_BATCH_NORM = True
 cfg.TRAIN.SNAPSHOT_EPOCH = 1
 # apex training?
 cfg.TRAIN.APEX = False
+cfg.TRAIN.DATA_ROOT = ''
 ########################### optimizer config ##################################
 # base learning rate
 cfg.SOLVER.LR = 1e-4
@@ -108,7 +109,7 @@ cfg.TEST.CROP_SIZE = None
 cfg.TEST.SCALES = [1.0]
 # flip
 cfg.TEST.FLIP = False
-
+cfg.TEST.DATA_ROOT = ''
 ########################## visual config ###########################################
 # visual result output dir
 cfg.VISUAL.OUTPUT_DIR = '../runs/visual/'
@@ -223,6 +224,6 @@ cfg.MODEL.TRANS2Seg.depth = 4
 cfg.MODEL.TRANS2Seg.num_heads = 8
 cfg.MODEL.TRANS2Seg.mlp_ratio = 3.
 cfg.MODEL.TRANS2Seg.hid_dim = 64
-
+cfg.MODEL.TRANS2Seg.nclass = 2
 
 

@@ -44,12 +44,13 @@ def demo():
         img_paths = [args.input_img]
     for img_path in img_paths:
         image = Image.open(img_path).convert('RGB')
+        image = image.resize((512, 512), Image.BILINEAR)
         images = transform(image).unsqueeze(0).to(args.device)
         with torch.no_grad():
             output = model(images)
 
         pred = torch.argmax(output[0], 1).squeeze(0).cpu().data.numpy()
-        mask = get_color_pallete(pred, cfg.DATASET.NAME)
+        mask = get_color_pallete(pred, 'trans10kv2')
         outname = os.path.splitext(os.path.split(img_path)[-1])[0] + '.png'
         mask.save(os.path.join(output_dir, outname))
 
