@@ -40,9 +40,14 @@ class SegmentationMetric(object):
             if self.distributed:
                 correct = reduce_tensor(correct)
                 labeled = reduce_tensor(labeled)
-                inter = reduce_tensor(inter.cuda())
-                union = reduce_tensor(union.cuda())
-            torch.cuda.synchronize()
+                if torch.cuda.is_available():
+                    inter = reduce_tensor(inter.cuda())
+                    union = reduce_tensor(union.cuda())
+                else:
+                    inter = reduce_tensor(inter)
+                    union = reduce_tensor(union)
+            if torch.cuda.is_available():
+                torch.cuda.synchronize()
             self.total_correct += correct.item()
             self.total_label += labeled.item()
             if self.total_inter.device != inter.device:

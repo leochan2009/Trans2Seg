@@ -49,11 +49,13 @@ class Trainer(object):
         # dataset and dataloader
         data_kwargs = {'transform': input_transform,
                        'base_size': cfg.TRAIN.BASE_SIZE,
-                       'crop_size': cfg.TRAIN.CROP_SIZE}
+                       'crop_size': cfg.TRAIN.CROP_SIZE,
+                       'root': "/Users/longquanchen/Desktop/Work/DeepLearning/Segment_Transparent_Objects/datasets/laserfiberBigData/SelectedVidsPostBlender"}
 
         data_kwargs_testval = {'transform': input_transform,
                        'base_size': cfg.TRAIN.BASE_SIZE,
-                       'crop_size': cfg.TEST.CROP_SIZE}
+                       'crop_size': cfg.TEST.CROP_SIZE,
+                        'root': "/Users/longquanchen/Desktop/Work/DeepLearning/Segment_Transparent_Objects/datasets/laserfiberBigData/SelectedVidsPostBlender"}
 
         train_dataset = get_segmentation_dataset(cfg.DATASET.NAME, split='train', mode='train', **data_kwargs)
         val_dataset = get_segmentation_dataset(cfg.DATASET.NAME, split='val', mode='testval', **data_kwargs_testval)

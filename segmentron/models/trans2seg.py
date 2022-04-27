@@ -65,7 +65,8 @@ class Transformer(nn.Module):
                                      depth=vit_params['depth'],
                                      num_heads=vit_params['num_heads'],
                                      mlp_ratio=vit_params['mlp_ratio'],
-                                     decoder_feat_HxW=vit_params['decoder_feat_HxW'])
+                                     decoder_feat_HxW=vit_params['decoder_feat_HxW'],
+                                     nclass = vit_params['nclass'])
 
     def forward(self, x):
         n, _, h, w = x.shape

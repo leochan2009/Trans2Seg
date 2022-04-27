@@ -116,7 +116,8 @@ class SegmentationDataset(object):
             img = self.color_jitter(img)
 
         # final transform
-        img, mask = self._img_transform(img), self._mask_transform(mask)
+        img =  self._img_transform(img)
+        mask = self._mask_transform(mask)
 
         return img, mask
 

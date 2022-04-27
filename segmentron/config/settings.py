@@ -22,7 +22,7 @@ cfg.DATASET.STD = [0.5, 0.5, 0.5]
 # dataset ignore index
 cfg.DATASET.IGNORE_INDEX = -1
 # workers
-cfg.DATASET.WORKERS = 8
+cfg.DATASET.WORKERS = 0
 # val dataset mode
 cfg.DATASET.MODE = 'testval'
 ########################### data augment ######################################
@@ -99,7 +99,7 @@ cfg.SOLVER.AUX_WEIGHT = 0.4
 cfg.SOLVER.LOSS_NAME = ''
 ########################## test config ###########################################
 # val/test model path
-cfg.TEST.TEST_MODEL_PATH = ''
+cfg.TEST.TEST_MODEL_PATH = '/Users/longquanchen/Desktop/Work/DeepLearning/Trans2Seg/tools/workdirs/trans10kv2/trans2seg_tiny/50.pth'
 # test batch size
 cfg.TEST.BATCH_SIZE = 1
 # eval crop size
@@ -223,6 +223,7 @@ cfg.MODEL.TRANS2Seg.depth = 4
 cfg.MODEL.TRANS2Seg.num_heads = 8
 cfg.MODEL.TRANS2Seg.mlp_ratio = 3.
 cfg.MODEL.TRANS2Seg.hid_dim = 64
+cfg.MODEL.TRANS2Seg.nclass = 2
 
 
 

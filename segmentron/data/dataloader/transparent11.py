@@ -35,8 +35,8 @@ class TransparentSegmentation(SegmentationDataset):
     >>>     trainset, 4, shuffle=True,
     >>>     num_workers=4)
     """
-    BASE_DIR = 'Trans10K_cls12'
-    NUM_CLASS = 12
+    BASE_DIR = '30-Nov-21_10-54PM_011_processed_22-54-05_183_1' #'Trans10K_cls12'
+    NUM_CLASS = 2
 
     def __init__(self, root='datasets/transparent', split='test', mode=None, transform=None, **kwargs):
         super(TransparentSegmentation, self).__init__(root, split, mode, transform, **kwargs)
@@ -49,7 +49,8 @@ class TransparentSegmentation(SegmentationDataset):
         logging.info('Found {} images in the folder {}'.format(len(self.images), root))
 
     def _mask_transform(self, mask):
-        return torch.LongTensor(np.array(mask).astype('int32'))
+        return torch.LongTensor((np.array(mask)/255).astype('int32')[:,:,0])
+        #return torch.LongTensor(np.array(mask).astype('int32'))
 
     def _val_sync_transform_resize(self, img, mask):
         short_size = self.crop_size
@@ -67,7 +68,7 @@ class TransparentSegmentation(SegmentationDataset):
             if self.transform is not None:
                 img = self.transform(img)
             return img, os.path.basename(self.images[index])
-        mask = Image.open(self.masks[index]).convert("P")
+        mask = Image.open(self.masks[index])#.convert("P")
         # synchrosized transform
         if self.mode == 'train':
             img, mask = self._sync_transform(img, mask, resize=True)
@@ -91,9 +92,10 @@ class TransparentSegmentation(SegmentationDataset):
     @property
     def classes(self):
         """Category names."""
-        return ('Background', 'Shelf', 'Jar or Tank', 'Freezer', 'Window',
-                'Glass Door', 'Eyeglass', 'Cup', 'Floor Glass', 'Glass Bow',
-                'Water Bottle', 'Storage Box')
+        return ('Background', 'fiber')
+        # return ('Background', 'Shelf', 'Jar or Tank', 'Freezer', 'Window',
+        #         'Glass Door', 'Eyeglass', 'Cup', 'Floor Glass', 'Glass Bow',
+        #         'Water Bottle', 'Storage Box')
 
 
 def _get_trans10k_pairs(folder, mode='train'):
@@ -101,20 +103,24 @@ def _get_trans10k_pairs(folder, mode='train'):
     mask_paths = []
     if mode == 'train':
         img_folder = os.path.join(folder, 'train/images')
-        mask_folder = os.path.join(folder, 'train/masks_12')
+        #mask_folder = os.path.join(folder, 'train/masks_12')
+        mask_folder = os.path.join(folder, 'train/masks')
     elif mode == "val":
         img_folder = os.path.join(folder, 'validation/images')
-        mask_folder = os.path.join(folder, 'validation/masks_12')
+        #mask_folder = os.path.join(folder, 'validation/masks_12')
+        mask_folder = os.path.join(folder, 'validation/masks')
     else:
         assert  mode == "test"
-        img_folder = os.path.join(folder, 'test/images')
-        mask_folder = os.path.join(folder, 'test/masks_12')
+        img_folder = os.path.join(folder, 'validation/images')
+        # mask_folder = os.path.join(folder, 'test/masks_12')
+        mask_folder = os.path.join(folder, 'validation/masks')
 
     for filename in os.listdir(img_folder):
         basename, _ = os.path.splitext(filename)
-        if filename.endswith(".jpg"):
+        if filename.endswith(".png"):
             imgpath = os.path.join(img_folder, filename)
-            maskname = basename + '_mask.png'
+            #maskname = basename + '_mask.png'
+            maskname = basename.replace("VF","Image") + '.png'
             maskpath = os.path.join(mask_folder, maskname)
             if os.path.isfile(maskpath):
                 img_paths.append(imgpath)
