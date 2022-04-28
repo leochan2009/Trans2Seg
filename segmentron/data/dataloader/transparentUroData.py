@@ -50,8 +50,8 @@ class TransparentUroDataSegmentation(SegmentationDataset):
 
     def _mask_transform(self, mask):
         mask_np = np.array(mask)
-        if mask_np.shape ==3:
-            return torch.LongTensor(mask_np / mask_np.max().astype('int32')[:, :, 0])
+        if len(mask_np.shape) ==3:
+            return torch.LongTensor((mask_np / mask_np.max().astype('int32'))[:,:,0])
         else:
             return torch.LongTensor(mask_np/mask_np.max().astype('int32'))
         #return torch.LongTensor(np.array(mask).astype('int32'))
@@ -108,7 +108,7 @@ def _get_trans10k_pairs(folder, mode='train'):
     maskRoot = os.path.join(folder, 'masks')
     for subdir, dirs, files in os.walk(maskRoot):
         for file in files:
-            if not file == '.DS_Store':
+            if not file == '.DS_Store' and (file[-4:] == '.png' or file[-4:] == '.jpg'):
                 mask_paths.append(os.path.join(subdir,file))
                 image = os.path.join(folder, 'images', os.path.basename(subdir), file)
                 img_paths.append(image)

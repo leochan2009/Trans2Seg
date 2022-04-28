@@ -1,6 +1,9 @@
 import os
 import sys
 import torch
+from subprocess import PIPE, Popen
+import cv2
+import numpy as np
 
 cur_path = os.path.abspath(os.path.dirname(__file__))
 root_path = os.path.split(cur_path)[0]
@@ -15,6 +18,42 @@ from segmentron.utils.default_setup import default_setup
 from segmentron.config import cfg
 
 
+class HighQualityVideoWriter:
+    def __init__(self, out_fname):
+        # ffmpeg setup
+        self.pipe = Popen(
+            [
+                "ffmpeg",
+                "-y",
+                "-f",
+                "image2pipe",
+                "-vcodec",
+                "mjpeg",
+                "-r",
+                "25",
+                "-i",
+                "-",
+                "-vcodec",
+                "h264",
+                "-crf",
+                "0",
+                "-r",
+                "25",
+                out_fname,
+            ],
+            stdin=PIPE,
+        )
+
+    def write(self, frame):
+        im = Image.fromarray(frame)
+        im.save(self.pipe.stdin, "JPEG")
+
+    def close(self):
+        self.pipe.stdin.close()
+        self.pipe.wait()
+        self.pipe = None
+
+
 def demo():
     args = parse_args()
     cfg.update_from_file(args.config_file)
@@ -22,7 +61,7 @@ def demo():
     cfg.ROOT_PATH = root_path
     cfg.check_and_freeze()
     default_setup(args)
-
+    outputVideo = False
     # output folder
     output_dir = os.path.join(cfg.VISUAL.OUTPUT_DIR, 'vis_result_{}_{}_{}_{}'.format(
         cfg.MODEL.MODEL_NAME, cfg.MODEL.BACKBONE, cfg.DATASET.NAME, cfg.TIME_STAMP))
@@ -38,21 +77,56 @@ def demo():
     model = get_segmentation_model().to(args.device)
     model.eval()
 
-    if os.path.isdir(args.input_img):
-        img_paths = [os.path.join(args.input_img, x) for x in os.listdir(args.input_img)]
-    else:
-        img_paths = [args.input_img]
-    for img_path in img_paths:
-        image = Image.open(img_path).convert('RGB')
-        image = image.resize((512, 512), Image.BILINEAR)
-        images = transform(image).unsqueeze(0).to(args.device)
-        with torch.no_grad():
-            output = model(images)
+    if args.input_img[-4:] == '.mp4':
+        cap = cv2.VideoCapture(args.input_img)
+        video_writer = HighQualityVideoWriter(output_dir+'.mp4')
+        frame_num = -1
 
-        pred = torch.argmax(output[0], 1).squeeze(0).cpu().data.numpy()
-        mask = get_color_pallete(pred, 'trans10kv2')
-        outname = os.path.splitext(os.path.split(img_path)[-1])[0] + '.png'
-        mask.save(os.path.join(output_dir, outname))
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            frame_num += 1
+
+            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            image = cv2.resize(image, (512, 512))
+            images = transform(image).unsqueeze(0).to(args.device)
+            with torch.no_grad():
+                output = model(images)
+
+            pred = torch.argmax(output[0], 1).squeeze(0).cpu().data.numpy()
+            pred = cv2.cvtColor(np.float32(pred), cv2.COLOR_GRAY2BGR)
+            pred = cv2.resize(pred,(400,400)).astype('uint8')
+            pred[:,:,0] = pred[:,:,0]*255
+            #mask = get_color_pallete(pred, 'trans10kv2')
+            output_image = cv2.addWeighted(frame, 1, pred, 0.3, 0)
+            if outputVideo:
+                video_writer.write(output_image)
+            else:
+                cv2.imwrite(os.path.join(output_dir, os.path.basename(args.input_img)[:-4] + '-'+ str(frame_num)+'.png'), output_image)
+            print(frame_num)
+        cap.release()
+        if outputVideo:
+            video_writer.close()
+    else:
+        img_paths = []
+        if os.path.isdir(args.input_img):
+            for x in os.listdir(args.input_img):
+                if not '_mask' in x and (not x == '.DS_Store'):
+                    img_paths.append(os.path.join(args.input_img, x))
+        elif os.path.isfile(args.input_img):
+            img_paths = [args.input_img]
+        for img_path in img_paths:
+            image = Image.open(img_path).convert('RGB')
+            image = image.resize((512, 512), Image.BILINEAR)
+            images = transform(image).unsqueeze(0).to(args.device)
+            with torch.no_grad():
+                output = model(images)
+
+            pred = torch.argmax(output[0], 1).squeeze(0).cpu().data.numpy()
+            mask = get_color_pallete(pred, 'trans10kv2')
+            outname = os.path.splitext(os.path.split(img_path)[-1])[0] + '.png'
+            mask.save(os.path.join(output_dir, outname))
 
 
 if __name__ == '__main__':
