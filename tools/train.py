@@ -94,7 +94,7 @@ class Trainer(object):
         # print params and flops
         if get_rank() == 0:
             try:
-                show_flops_params(copy.deepcopy(self.model), args.device)
+                show_flops_params(copy.deepcopy(self.model), args.device, input_shape=[1, 3, cfg.TRAIN.BASE_SIZE, cfg.TRAIN.BASE_SIZE])
             except Exception as e:
                 logging.warning('get flops and params error: {}'.format(e))
         if cfg.MODEL.BN_TYPE not in ['BN']:

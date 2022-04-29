@@ -28,11 +28,14 @@ def load_model_pretrain(model):
     if cfg.PHASE == 'train':
         if cfg.TRAIN.PRETRAINED_MODEL_PATH:
             logging.info('load pretrained model from {}'.format(cfg.TRAIN.PRETRAINED_MODEL_PATH))
-            state_dict_to_load = torch.load(cfg.TRAIN.PRETRAINED_MODEL_PATH)
+            if torch.cuda.is_available():
+                state_dict_to_load = torch.load(cfg.TRAIN.PRETRAINED_MODEL_PATH, map_location=torch.device('cuda'))
+            else:
+                state_dict_to_load = torch.load(cfg.TRAIN.PRETRAINED_MODEL_PATH, map_location=torch.device('cpu'))
             keys_wrong_shape = []
             state_dict_suitable = OrderedDict()
             state_dict = model.state_dict()
-            for k, v in state_dict_to_load.items():
+            for k, v in state_dict_to_load['state_dict'].items():
                 if v.shape == state_dict[k].shape:
                     state_dict_suitable[k] = v
                 else:
@@ -44,7 +47,7 @@ def load_model_pretrain(model):
         if cfg.TEST.TEST_MODEL_PATH:
             logging.info('load test model from {}'.format(cfg.TEST.TEST_MODEL_PATH))
             if torch.cuda.is_available():
-                model_dic = torch.load(cfg.TEST.TEST_MODEL_PATH, map_location=torch.device('gpu'))
+                model_dic = torch.load(cfg.TEST.TEST_MODEL_PATH, map_location=torch.device('cuda'))
             else:
                 model_dic = torch.load(cfg.TEST.TEST_MODEL_PATH, map_location=torch.device('cpu'))
             if 'state_dict' in model_dic.keys():

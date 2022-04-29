@@ -89,7 +89,7 @@ def demo():
             frame_num += 1
 
             image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            image = cv2.resize(image, (512, 512))
+            image = cv2.resize(image, cfg.TEST.CROP_SIZE)
             images = transform(image).unsqueeze(0).to(args.device)
             with torch.no_grad():
                 output = model(images)
