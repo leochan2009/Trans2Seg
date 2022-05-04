@@ -30,10 +30,10 @@ class Trans2Seg(SegBaseModel):
 
         assert cfg.AUG.CROP == False and cfg.TRAIN.CROP_SIZE[0] == cfg.TRAIN.CROP_SIZE[1]\
                == cfg.TRAIN.BASE_SIZE == cfg.TEST.CROP_SIZE[0] == cfg.TEST.CROP_SIZE[1]
-        c4_HxW = (cfg.TRAIN.BASE_SIZE // 16) ** 2
+        c4_HxW = (cfg.TRAIN.ROI_END[0]-cfg.TRAIN.ROI_START[0])//16 * (cfg.TRAIN.ROI_END[1]-cfg.TRAIN.ROI_START[1])//16
+        #c4_HxW = (cfg.TRAIN.BASE_SIZE // 16) ** 2
 
         vit_params['decoder_feat_HxW'] = c4_HxW
-
         self.transformer_head = TransformerHead(vit_params, c1_channels=c1_channels, c4_channels=c4_channels, hid_dim=hid_dim)
         if self.aux:
             self.auxlayer = _FCNHead(728, self.nclass)
@@ -66,7 +66,9 @@ class Transformer(nn.Module):
                                      num_heads=vit_params['num_heads'],
                                      mlp_ratio=vit_params['mlp_ratio'],
                                      decoder_feat_HxW=vit_params['decoder_feat_HxW'],
-                                     nclass = vit_params['nclass'])
+                                     nclass = vit_params['nclass'],
+                                     num_patches = vit_params['decoder_feat_HxW']  ## get rid of the resize_pos_embed calculation
+                                     )
 
     def forward(self, x):
         n, _, h, w = x.shape

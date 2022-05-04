@@ -76,7 +76,9 @@ def demo():
 
     model = get_segmentation_model().to(args.device)
     model.eval()
-
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            print(name, param.size())
     if args.input_img[-4:] == '.mp4':
         cap = cv2.VideoCapture(args.input_img)
         video_writer = HighQualityVideoWriter(output_dir+'.mp4')
@@ -90,16 +92,19 @@ def demo():
 
             image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             image = cv2.resize(image, cfg.TEST.CROP_SIZE)
+            image = image[cfg.TEST.ROI_START[0]:cfg.TEST.ROI_END[0], cfg.TEST.ROI_START[1]:cfg.TEST.ROI_END[1]]
             images = transform(image).unsqueeze(0).to(args.device)
             with torch.no_grad():
                 output = model(images)
 
             pred = torch.argmax(output[0], 1).squeeze(0).cpu().data.numpy()
             pred = cv2.cvtColor(np.float32(pred), cv2.COLOR_GRAY2BGR)
-            pred = cv2.resize(pred,(400,400)).astype('uint8')
-            pred[:,:,0] = pred[:,:,0]*255
+            pred_filled = np.zeros(frame.shape)
+            pred_filled[:,:,:] = np.zeros(frame.shape)
+            #pred = cv2.resize(pred,(400,400)).astype('uint8')
+            pred_filled[cfg.TEST.ROI_START[0]:cfg.TEST.ROI_END[0], cfg.TEST.ROI_START[1]:cfg.TEST.ROI_END[1],0] = pred[:,:,0]*255
             #mask = get_color_pallete(pred, 'trans10kv2')
-            output_image = cv2.addWeighted(frame, 1, pred, 0.3, 0)
+            output_image = cv2.addWeighted(frame, 1, pred_filled.astype('uint8'), 0.3, 0)
             if outputVideo:
                 video_writer.write(output_image)
             else:

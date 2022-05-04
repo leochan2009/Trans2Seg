@@ -35,14 +35,12 @@ class TransparentUroDataSegmentation(SegmentationDataset):
     >>>     trainset, 4, shuffle=True,
     >>>     num_workers=4)
     """
-    BASE_DIR = 'GLDataset'#'30-Nov-21_10-54PM_011_processed_22-54-05_183_1' #'Trans10K_cls12'
+    BASE_DIR = ['GLDataset']#['Nov_ModifiedLVEdata', 'GLDataset']
     NUM_CLASS = 2
 
     def __init__(self, root='datasets/transparent', split='test', mode=None, transform=None, **kwargs):
         super(TransparentUroDataSegmentation, self).__init__(root, split, mode, transform, **kwargs)
-        root = os.path.join(self.root, self.BASE_DIR)
-        assert os.path.exists(root), "Please put the data in {SEG_ROOT}/datasets/transparent"
-        self.images, self.masks = _get_trans10k_pairs(root, split)
+        self.images, self.masks = _get_trans10k_pairs(self.root, self.BASE_DIR, split)
         assert (len(self.images) == len(self.masks))
         if len(self.images) == 0:
             raise RuntimeError("Found 0 images in subfolders of:" + root + "\n")
@@ -102,27 +100,32 @@ class TransparentUroDataSegmentation(SegmentationDataset):
         #         'Water Bottle', 'Storage Box')
 
 
-def _get_trans10k_pairs(folder, mode='train'):
+def _get_trans10k_pairs(root, folders, mode='train'):
     img_paths = []
     mask_paths = []
-    maskRoot = os.path.join(folder, 'masks')
-    for subdir, dirs, files in os.walk(maskRoot):
-        for file in files:
-            if not file == '.DS_Store' and (file[-4:] == '.png' or file[-4:] == '.jpg'):
-                mask_paths.append(os.path.join(subdir,file))
-                image = os.path.join(folder, 'images', os.path.basename(subdir), file)
-                img_paths.append(image)
-    indexTrain = int(len(mask_paths)*0.8)
-    if mode == 'train':
-        img_paths = img_paths[:indexTrain]
-        mask_paths = mask_paths[:indexTrain]
-    elif mode == "val":
-        img_paths = img_paths[indexTrain:]
-        mask_paths = mask_paths[indexTrain:]
-    else:
-        assert  mode == "test"
-        img_paths = img_paths[indexTrain:]
-        mask_paths = mask_paths[indexTrain:]
+    for folder in folders:
+        subfolder = os.path.join(root, folder)
+        assert os.path.exists(subfolder), "Please put the data in {SEG_ROOT}/datasets/transparent"
+        maskRoot = os.path.join(subfolder, 'masks')
+        mask_subpaths = []
+        img_subpaths = []
+        for subdir, dirs, files in os.walk(maskRoot):
+            for file in files:
+                if not file == '.DS_Store' and (file[-4:] == '.png' or file[-4:] == '.jpg'):
+                    mask_subpaths.append(os.path.join(subdir, file))
+                    image = os.path.join(subfolder, 'images', os.path.basename(subdir), file)
+                    img_subpaths.append(image)
+        indexTrain = int(len(mask_subpaths) * 0.8)
+        if mode == 'train':
+            img_paths.extend(img_subpaths[:indexTrain])
+            mask_paths.extend(mask_subpaths[:indexTrain])
+        elif mode == "val":
+            img_paths.extend(img_subpaths[indexTrain:])
+            mask_paths.extend(mask_subpaths[indexTrain:])
+        else:
+            assert mode == "test"
+            img_paths.extend(img_subpaths[indexTrain:])
+            mask_paths.extend(mask_subpaths[indexTrain:])
 
     return img_paths, mask_paths
 

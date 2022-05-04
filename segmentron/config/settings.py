@@ -45,11 +45,16 @@ cfg.TRAIN.CROP_SIZE = 769
 # train base size
 cfg.TRAIN.BASE_SIZE = 1024
 # model output dir
+# eval ROI End size
+cfg.TRAIN.ROI_START = None
+# eval ROI End size
+cfg.TRAIN.ROI_END = None
+
 cfg.TRAIN.MODEL_SAVE_DIR = 'workdirs/'
 # log dir
 cfg.TRAIN.LOG_SAVE_DIR = cfg.TRAIN.MODEL_SAVE_DIR
 # pretrained model for eval or finetune
-cfg.TRAIN.PRETRAINED_MODEL_PATH = ''
+cfg.TRAIN.PRETRAINED_MODEL_PATH = '/Users/longquanchen/Desktop/Work/DeepLearning/Trans2Seg/tools/workdirs/trans10kv2/trans2seg_tiny_mobilenet_400_PatchesCorrected/100.pth'
 # use pretrained backbone model over imagenet
 cfg.TRAIN.BACKBONE_PRETRAINED = True
 # backbone pretrained model path, if not specific, will load from url when backbone pretrained enabled
@@ -105,6 +110,10 @@ cfg.TEST.TEST_MODEL_PATH = ''
 cfg.TEST.BATCH_SIZE = 1
 # eval crop size
 cfg.TEST.CROP_SIZE = None
+# eval ROI End size
+cfg.TEST.ROI_START = None
+# eval ROI End size
+cfg.TEST.ROI_END = None
 # multiscale eval
 cfg.TEST.SCALES = [1.0]
 # flip

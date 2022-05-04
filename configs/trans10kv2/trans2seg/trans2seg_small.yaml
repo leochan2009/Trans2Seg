@@ -5,21 +5,25 @@ DATASET:
 TRAIN:
     EPOCHS: 50
     BATCH_SIZE: 1
-    CROP_SIZE: (512, 512)
-    BASE_SIZE: 512
+    CROP_SIZE: (400, 400)
+    BASE_SIZE: 400
+    ROI_START: (100,192)
+    ROI_END: (308,400)
     MODEL_SAVE_DIR: 'workdirs/trans10kv2/trans2seg_tiny'
     DATA_ROOT: '/Users/longquanchen/Desktop/Work/DeepLearning/Segment_Transparent_Objects/datasets/laserfiberBigData/SelectedVidsPostBlender'
 TEST:
     BATCH_SIZE: 16
-    CROP_SIZE: (512, 512)
+    CROP_SIZE: (400, 400)
     DATA_ROOT: '/Users/longquanchen/Desktop/Work/DeepLearning/Segment_Transparent_Objects/datasets/laserfiberBigData/SelectedVidsPostBlender'
-
+    TEST_MODEL_PATH: '/Users/longquanchen/Desktop/Work/DeepLearning/Trans2Seg/tools/workdirs/trans10kv2/trans2seg_tiny_mobilenet_400_GL_V7NovData/100.pth'
+    ROI_START: (100,192)
+    ROI_END: (308,400)
 SOLVER:
     OPTIMIZER: "adam"
     LR: 0.0001
 MODEL:
     MODEL_NAME: "Trans2Seg"
-    BACKBONE: "resnet50c"
+    BACKBONE: "mobilenet_v2" #"resnet50c"
     TRANS2Seg:
         embed_dim: 128
         depth: 1
