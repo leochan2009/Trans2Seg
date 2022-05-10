@@ -10,6 +10,7 @@ from .sbu_shadow import SBUSegmentation
 from .transparent11 import TransparentSegmentation
 from .transparent11_boundary import TransparentSegmentationBoundary
 from .transparentUroData import TransparentUroDataSegmentation
+from .transparentUroData_boundary import TransparentUroDataSegmentationBoundary
 
 datasets = {
     'ade20k': ADE20KSegmentation,
@@ -20,7 +21,8 @@ datasets = {
     'sbu': SBUSegmentation,
     'transparent11': TransparentSegmentation, 
     'transparent11_boundary': TransparentSegmentationBoundary,
-    'transparenturodata': TransparentUroDataSegmentation
+    'transparenturodata': TransparentUroDataSegmentation,
+    'transparenturodata_boundary': TransparentUroDataSegmentationBoundary
 }
 
 

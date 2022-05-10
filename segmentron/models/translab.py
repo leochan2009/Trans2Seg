@@ -22,17 +22,19 @@ class TransLab(SegBaseModel):
         if self.backbone.startswith('mobilenet'):
             c1_channels = 24
             c4_channels = 320
-        else:   
-            c1_channels = 256       
+            c2_channel = 32
+        else:
+            c1_channels = 256
             c4_channels = 2048
             c2_channel = 512
 
-        self.head = _DeepLabHead_attention(self.nclass, c1_channels=c1_channels, c4_channels=c4_channels, c2_channel=c2_channel)
+        self.head = _DeepLabHead_attention(self.nclass, c1_channels=c1_channels, c4_channels=c4_channels,
+                                           c2_channel=c2_channel)
         self.head_b = _DeepLabHead(1, c1_channels=c1_channels, c4_channels=c4_channels)
 
-        self.fus_head1 = FusHead()
-        self.fus_head2 = FusHead(inplane=2048)
-        self.fus_head3 = FusHead(inplane=512)
+        self.fus_head1 = FusHead(inplane=c1_channels)
+        self.fus_head2 = FusHead(inplane=c4_channels)
+        self.fus_head3 = FusHead(inplane=c2_channel)
 
         if self.aux:
             self.auxlayer = _FCNHead(728, self.nclass)
@@ -100,8 +102,10 @@ class TransLab(SegBaseModel):
 class _DeepLabHead(nn.Module):
     def __init__(self, nclass, c1_channels=256, c4_channels=2048, norm_layer=nn.BatchNorm2d):
         super(_DeepLabHead, self).__init__()
-        self.use_aspp = True
-        self.use_decoder = True
+        # self.use_aspp = True
+        # self.use_decoder = True
+        self.use_aspp = cfg.MODEL.DEEPLABV3_PLUS.USE_ASPP
+        self.use_decoder = cfg.MODEL.DEEPLABV3_PLUS.ENABLE_DECODER
         last_channels = c4_channels
         if self.use_aspp:
             self.aspp = _ASPP(c4_channels, 256)
@@ -130,33 +134,35 @@ class _DeepLabHead(nn.Module):
 class _DeepLabHead_attention(nn.Module):
     def __init__(self, nclass, c1_channels=256, c4_channels=2048, c2_channel=512, norm_layer=nn.BatchNorm2d):
         super(_DeepLabHead_attention, self).__init__()
-        # self.use_aspp = cfg.MODEL.DEEPLABV3_PLUS.USE_ASPP
-        # self.use_decoder = cfg.MODEL.DEEPLABV3_PLUS.ENABLE_DECODER
-        self.use_aspp = True
-        self.use_decoder = True
+        self.use_aspp = cfg.MODEL.DEEPLABV3_PLUS.USE_ASPP
+        self.use_decoder = cfg.MODEL.DEEPLABV3_PLUS.ENABLE_DECODER
+        # self.use_aspp = True
+        # self.use_decoder = True
         last_channels = c4_channels
+        c2_last_channel=c4_channels
         if self.use_aspp:
             self.aspp = _ASPP(c4_channels, 256)
             last_channels = 256
+            c2_last_channel = 256
         if self.use_decoder:
             self.c1_block = _ConvBNReLU(c1_channels, 48, 1, norm_layer=norm_layer)
             last_channels += 48
 
             self.c2_block = _ConvBNReLU(c2_channel, 24, 1, norm_layer=norm_layer)
             last_channels += 24
+            c2_last_channel +=24
 
         self.block = nn.Sequential(
-            SeparableConv2d(256+24+48, 256, 3, norm_layer=norm_layer, relu_first=False),
+            SeparableConv2d(last_channels, 256, 3, norm_layer=norm_layer, relu_first=False),
             SeparableConv2d(256, 256, 3, norm_layer=norm_layer, relu_first=False),
             nn.Conv2d(256, nclass, 1))
 
         self.block_c2 = nn.Sequential(
-            SeparableConv2d(256+24, 256+24, 3, norm_layer=norm_layer, relu_first=False),
-            SeparableConv2d(256+24, 256+24, 3, norm_layer=norm_layer, relu_first=False))
+            SeparableConv2d(c2_last_channel, c2_last_channel, 3, norm_layer=norm_layer, relu_first=False),
+            SeparableConv2d(c2_last_channel, c2_last_channel, 3, norm_layer=norm_layer, relu_first=False))
 
-
-        self.fus_head_c2 = FusHead(inplane=256+24)
-        self.fus_head_c1 = FusHead(inplane=256+24+48)
+        self.fus_head_c2 = FusHead(inplane=c2_last_channel)
+        self.fus_head_c1 = FusHead(inplane=last_channels)
 
 
     def forward(self, x, c2, c1, attention_map):

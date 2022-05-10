@@ -3,6 +3,7 @@ import copy
 import datetime
 import os
 import sys
+import shutil
 
 cur_path = os.path.abspath(os.path.dirname(__file__))
 root_path = os.path.split(cur_path)[0]
@@ -48,11 +49,13 @@ class Trainer(object):
         # dataset and dataloader
         data_kwargs = {'transform': input_transform,
                        'base_size': cfg.TRAIN.BASE_SIZE,
-                       'crop_size': cfg.TRAIN.CROP_SIZE}
+                       'crop_size': cfg.TRAIN.CROP_SIZE,
+                       'root': cfg.TEST.DATA_ROOT}
 
         data_kwargs_testval = {'transform': input_transform,
                                'base_size': cfg.TRAIN.BASE_SIZE,
-                               'crop_size': cfg.TEST.CROP_SIZE}
+                               'crop_size': cfg.TEST.CROP_SIZE,
+                               'root': cfg.TEST.DATA_ROOT}
 
         train_dataset = get_segmentation_dataset(cfg.DATASET.NAME, split='train', mode='train', **data_kwargs)
         val_dataset = get_segmentation_dataset(cfg.DATASET.NAME, split='val', mode='testval', **data_kwargs_testval)
@@ -89,7 +92,7 @@ class Trainer(object):
         # print params and flops
         if get_rank() == 0:
             try:
-                show_flops_params(copy.deepcopy(self.model), args.device)
+                show_flops_params(copy.deepcopy(self.model), args.device, input_shape=[1, 3, cfg.TRAIN.ROI_END[0]-cfg.TRAIN.ROI_START[0] , cfg.TRAIN.ROI_END[1]-cfg.TRAIN.ROI_START[1] ])
             except Exception as e:
                 logging.warning('get flops and params error: {}'.format(e))
         if cfg.MODEL.BN_TYPE not in ['BN']:
@@ -144,7 +147,7 @@ class Trainer(object):
 
         start_time = time.time()
         logging.info('Start training, Total Epochs: {:d} = Total Iterations {:d}'.format(epochs, max_iters))
-
+        shutil.copy(self.args.config_file, cfg.TRAIN.MODEL_SAVE_DIR)
         self.model.train()
         iteration = self.start_epoch * iters_per_epoch if self.start_epoch > 0 else 0
         for (images, targets, boundary, _) in self.train_loader:
@@ -154,7 +157,12 @@ class Trainer(object):
             images = images.to(self.device)
             targets = targets.to(self.device)
             boundarys = boundary.to(self.device)
-
+            images = images[:, :, cfg.TRAIN.ROI_START[0]:cfg.TRAIN.ROI_END[0],
+                    cfg.TRAIN.ROI_START[1]:cfg.TRAIN.ROI_END[1]]
+            targets = targets[:, cfg.TRAIN.ROI_START[0]:cfg.TRAIN.ROI_END[0],
+                     cfg.TRAIN.ROI_START[1]:cfg.TRAIN.ROI_END[1]]
+            boundarys = boundarys[:, cfg.TRAIN.ROI_START[0]:cfg.TRAIN.ROI_END[0],
+                     cfg.TRAIN.ROI_START[1]:cfg.TRAIN.ROI_END[1]]
             outputs, outputs_boundary = self.model(images)
             loss_dict = self.criterion(outputs, targets)
             boundarys = boundarys.float()
@@ -214,14 +222,19 @@ class Trainer(object):
         for i, (image, target, boundary, filename) in enumerate(self.val_loader):
             image = image.to(self.device)
             target = target.to(self.device)
-
+            image = image[:, :, cfg.TRAIN.ROI_START[0]:cfg.TRAIN.ROI_END[0],
+                     cfg.TRAIN.ROI_START[1]:cfg.TRAIN.ROI_END[1]]
+            target = target[:, cfg.TRAIN.ROI_START[0]:cfg.TRAIN.ROI_END[0],
+                      cfg.TRAIN.ROI_START[1]:cfg.TRAIN.ROI_END[1]]
+            boundary = boundary[:, cfg.TRAIN.ROI_START[0]:cfg.TRAIN.ROI_END[0],
+                        cfg.TRAIN.ROI_START[1]:cfg.TRAIN.ROI_END[1]]
             with torch.no_grad():
                 if cfg.DATASET.MODE == 'val' or cfg.TEST.CROP_SIZE is None:
                     output, output_boundary = model(image)[0][0], model(image)[1][0]
                 else:
                     size = image.size()[2:]
-                    assert cfg.TEST.CROP_SIZE[0] == size[0]
-                    assert cfg.TEST.CROP_SIZE[1] == size[1]
+                    assert cfg.TRAIN.ROI_END[0] - cfg.TRAIN.ROI_START[0]== size[0]
+                    assert cfg.TRAIN.ROI_END[1] - cfg.TRAIN.ROI_START[1]== size[1]
                     output, output_boundary = model(image)[0][0], model(image)[1][0]
 
             self.metric.update(output, target)
@@ -242,14 +255,19 @@ class Trainer(object):
         for i, (image, target, boundary, filename) in enumerate(self.test_loader):
             image = image.to(self.device)
             target = target.to(self.device)
-
+            image = image[:, :, cfg.TEST.ROI_START[0]:cfg.TEST.ROI_END[0],
+                     cfg.TEST.ROI_START[1]:cfg.TEST.ROI_END[1]]
+            target = target[:, cfg.TEST.ROI_START[0]:cfg.TEST.ROI_END[0],
+                      cfg.TEST.ROI_START[1]:cfg.TEST.ROI_END[1]]
+            boundary = boundary[:, cfg.TEST.ROI_START[0]:cfg.TEST.ROI_END[0],
+                        cfg.TEST.ROI_START[1]:cfg.TEST.ROI_END[1]]
             with torch.no_grad():
                 if cfg.DATASET.MODE == 'test' or cfg.TEST.CROP_SIZE is None:
                     output, output_boundary = model(image)[0][0], model(image)[1][0]
                 else:
                     size = image.size()[2:]
-                    assert cfg.TEST.CROP_SIZE[0] == size[0]
-                    assert cfg.TEST.CROP_SIZE[1] == size[1]
+                    assert cfg.TEST.ROI_END[0] - cfg.TEST.ROI_START[0] == size[0]
+                    assert cfg.TEST.ROI_END[1] - cfg.TEST.ROI_START[1] == size[1]
                     output, output_boundary = model(image)[0][0], model(image)[1][0]
 
             self.metric.update(output, target)

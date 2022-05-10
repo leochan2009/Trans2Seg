@@ -97,7 +97,7 @@ def demo():
             with torch.no_grad():
                 output = model(images)
 
-            pred = torch.argmax(output[0], 1).squeeze(0).cpu().data.numpy()
+            pred = torch.argmax(output[0][0], 1).squeeze(0).cpu().data.numpy()
             pred = cv2.cvtColor(np.float32(pred), cv2.COLOR_GRAY2BGR)
             pred_filled = np.zeros(frame.shape)
             pred_filled[:,:,:] = np.zeros(frame.shape)
