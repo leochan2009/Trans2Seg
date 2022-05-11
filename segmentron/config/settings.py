@@ -54,7 +54,7 @@ cfg.TRAIN.MODEL_SAVE_DIR = 'workdirs/'
 # log dir
 cfg.TRAIN.LOG_SAVE_DIR = cfg.TRAIN.MODEL_SAVE_DIR
 # pretrained model for eval or finetune
-cfg.TRAIN.PRETRAINED_MODEL_PATH = '/Users/longquanchen/Desktop/Work/DeepLearning/Trans2Seg/tools/workdirs/trans10kv2/trans2seg_tiny_mobilenet_400_PatchesCorrected/100.pth'
+cfg.TRAIN.PRETRAINED_MODEL_PATH = ''
 # use pretrained backbone model over imagenet
 cfg.TRAIN.BACKBONE_PRETRAINED = True
 # backbone pretrained model path, if not specific, will load from url when backbone pretrained enabled
@@ -225,7 +225,9 @@ cfg.MODEL.HRNET.STAGE4.FUSE_METHOD = 'SUM'
 
 
 ########################## translab config ######################################
+cfg.MODEL.TRANSLAB.MASK_WEIGHT = 1
 cfg.MODEL.TRANSLAB.BOUNDARY_WEIGHT = 5
+
 
 ########################## transtrans config #####################################
 cfg.MODEL.TRANS2Seg.embed_dim = 256

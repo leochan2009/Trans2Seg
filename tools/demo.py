@@ -128,7 +128,7 @@ def demo():
             with torch.no_grad():
                 output = model(images)
 
-            pred = torch.argmax(output[0], 1).squeeze(0).cpu().data.numpy()
+            pred = torch.argmax(output[0][0], 1).squeeze(0).cpu().data.numpy()
             mask = get_color_pallete(pred, 'trans10kv2')
             outname = os.path.splitext(os.path.split(img_path)[-1])[0] + '.png'
             mask.save(os.path.join(output_dir, outname))

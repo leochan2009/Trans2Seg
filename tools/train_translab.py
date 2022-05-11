@@ -168,7 +168,9 @@ class Trainer(object):
             boundarys = boundarys.float()
             valid = torch.ones_like(boundarys)
             lossb_dict = dict(loss=self.criterion_b(outputs_boundary[0], boundarys, valid))
+            weight_mask = cfg.MODEL.TRANSLAB.MASK_WEIGHT
             weight_boundary = cfg.MODEL.TRANSLAB.BOUNDARY_WEIGHT
+            loss_dict['loss'] = weight_mask * loss_dict['loss']
             lossb_dict['loss'] = weight_boundary * lossb_dict['loss']
 
             losses = sum(loss for loss in loss_dict.values()) + \
@@ -222,22 +224,27 @@ class Trainer(object):
         for i, (image, target, boundary, filename) in enumerate(self.val_loader):
             image = image.to(self.device)
             target = target.to(self.device)
+            boundary = boundary.to(self.device)
             image = image[:, :, cfg.TRAIN.ROI_START[0]:cfg.TRAIN.ROI_END[0],
-                     cfg.TRAIN.ROI_START[1]:cfg.TRAIN.ROI_END[1]]
+                    cfg.TRAIN.ROI_START[1]:cfg.TRAIN.ROI_END[1]]
             target = target[:, cfg.TRAIN.ROI_START[0]:cfg.TRAIN.ROI_END[0],
-                      cfg.TRAIN.ROI_START[1]:cfg.TRAIN.ROI_END[1]]
+                     cfg.TRAIN.ROI_START[1]:cfg.TRAIN.ROI_END[1]]
             boundary = boundary[:, cfg.TRAIN.ROI_START[0]:cfg.TRAIN.ROI_END[0],
-                        cfg.TRAIN.ROI_START[1]:cfg.TRAIN.ROI_END[1]]
+                       cfg.TRAIN.ROI_START[1]:cfg.TRAIN.ROI_END[1]]
             with torch.no_grad():
                 if cfg.DATASET.MODE == 'val' or cfg.TEST.CROP_SIZE is None:
                     output, output_boundary = model(image)[0][0], model(image)[1][0]
                 else:
                     size = image.size()[2:]
-                    assert cfg.TRAIN.ROI_END[0] - cfg.TRAIN.ROI_START[0]== size[0]
-                    assert cfg.TRAIN.ROI_END[1] - cfg.TRAIN.ROI_START[1]== size[1]
+                    assert cfg.TRAIN.ROI_END[0] - cfg.TRAIN.ROI_START[0] == size[0]
+                    assert cfg.TRAIN.ROI_END[1] - cfg.TRAIN.ROI_START[1] == size[1]
                     output, output_boundary = model(image)[0][0], model(image)[1][0]
 
-            self.metric.update(output, target)
+            weight_mask = cfg.MODEL.TRANSLAB.MASK_WEIGHT
+            if weight_mask == 0:
+                self.metric.update(output_boundary, boundary)
+            elif weight_mask > 0:
+                self.metric.update(output, target)
             pixAcc, mIoU, category_iou = self.metric.get(return_category_iou=True)
             logging.info("[EVAL] Sample: {:d}, pixAcc: {:.3f}, mIoU: {:.3f}".format(i + 1, pixAcc * 100, mIoU * 100))
         pixAcc, mIoU = self.metric.get()
