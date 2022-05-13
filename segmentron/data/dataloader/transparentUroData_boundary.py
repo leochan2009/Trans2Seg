@@ -109,7 +109,7 @@ class TransparentUroDataSegmentationBoundary(SegmentationDataset):
         #         'Water Bottle', 'Storage Box')
 
 
-def _get_trans10k_pairs(root, folders, mode='train'):
+def _get_trans10k_pairs(root, folders, mode='train', useJacket=True):
     img_paths = []
     mask_paths = []
     for folder in folders:
@@ -120,9 +120,12 @@ def _get_trans10k_pairs(root, folders, mode='train'):
         img_subpaths = []
         for subdir, dirs, files in os.walk(maskRoot):
             for file in files:
-                if not file == '.DS_Store' and (file[-4:] == '.png' or file[-4:] == '.jpg'):
+                if not file == '.DS_Store' and (file[-4:] == '.png' or file[-4:] == '.jpg') and (('-no-jacket' in file) ^ useJacket): # xor operation for file filtering
                     mask_subpaths.append(os.path.join(subdir, file))
-                    image = os.path.join(subfolder, 'images', os.path.basename(subdir), file)
+                    if useJacket:
+                        image = os.path.join(subfolder, 'images', os.path.basename(subdir), file)
+                    else:
+                        image = os.path.join(subfolder, 'images', os.path.basename(subdir), file[:-14]+'.png')
                     img_subpaths.append(image)
         indexTrain = int(len(mask_subpaths) * 0.8)
         if mode == 'train':

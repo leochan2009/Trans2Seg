@@ -122,16 +122,23 @@ def demo():
         elif os.path.isfile(args.input_img):
             img_paths = [args.input_img]
         for img_path in img_paths:
-            image = Image.open(img_path).convert('RGB')
-            image = image.resize((512, 512), Image.BILINEAR)
+            frame = cv2.imread(img_path)
+            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            image = cv2.resize(image, cfg.TEST.CROP_SIZE)
+            image = image[cfg.TEST.ROI_START[0]:cfg.TEST.ROI_END[0], cfg.TEST.ROI_START[1]:cfg.TEST.ROI_END[1]]
             images = transform(image).unsqueeze(0).to(args.device)
             with torch.no_grad():
                 output = model(images)
 
             pred = torch.argmax(output[0][0], 1).squeeze(0).cpu().data.numpy()
-            mask = get_color_pallete(pred, 'trans10kv2')
-            outname = os.path.splitext(os.path.split(img_path)[-1])[0] + '.png'
-            mask.save(os.path.join(output_dir, outname))
+            pred = cv2.cvtColor(np.float32(pred), cv2.COLOR_GRAY2BGR)
+            pred_filled = np.zeros(frame.shape)
+            pred_filled[:, :, :] = np.zeros(frame.shape)
+            # pred = cv2.resize(pred,(400,400)).astype('uint8')
+            pred_filled[cfg.TEST.ROI_START[0]:cfg.TEST.ROI_END[0], cfg.TEST.ROI_START[1]:cfg.TEST.ROI_END[1], 0] = pred[:, :,0] * 255
+            # mask = get_color_pallete(pred, 'trans10kv2')
+            output_image = cv2.addWeighted(frame, 1, pred_filled.astype('uint8'), 0.3, 0)
+            cv2.imwrite(os.path.join(output_dir, os.path.basename(img_path)[:-4] + '.png'), output_image)
 
 
 if __name__ == '__main__':
