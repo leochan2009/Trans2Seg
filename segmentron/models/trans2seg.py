@@ -47,7 +47,6 @@ class Trans2Seg(SegBaseModel):
         outputs = list()
         x = self.transformer_head(c4, c1)
         x = F.interpolate(x, size, mode='bilinear', align_corners=True)
-
         outputs.append(x)
         if self.aux:
             auxout = self.auxlayer(c3)

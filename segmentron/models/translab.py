@@ -161,8 +161,8 @@ class _DeepLabHead_attention(nn.Module):
             SeparableConv2d(c2_last_channel, c2_last_channel, 3, norm_layer=norm_layer, relu_first=False),
             SeparableConv2d(c2_last_channel, c2_last_channel, 3, norm_layer=norm_layer, relu_first=False))
 
-        self.fus_head_c2 = FusHead(inplane=c2_last_channel)
-        self.fus_head_c1 = FusHead(inplane=last_channels)
+        self.fus_head_c2 = FusHead(inplane=c2_last_channel) #Boundary attention module
+        self.fus_head_c1 = FusHead(inplane=last_channels) #Boundary attention module
 
 
     def forward(self, x, c2, c1, attention_map):
@@ -188,7 +188,7 @@ class _DeepLabHead_attention(nn.Module):
         return self.block(x)
 
 
-class FusHead(nn.Module):
+class FusHead(nn.Module): #Boundary attention module
     def __init__(self, norm_layer=nn.BatchNorm2d, inplane=256):
         super(FusHead, self).__init__()
         self.conv1 = SeparableConv2d(inplane*2, inplane, 3, norm_layer=norm_layer, relu_first=False)

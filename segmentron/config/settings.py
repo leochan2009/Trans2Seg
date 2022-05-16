@@ -236,5 +236,7 @@ cfg.MODEL.TRANS2Seg.num_heads = 8
 cfg.MODEL.TRANS2Seg.mlp_ratio = 3.
 cfg.MODEL.TRANS2Seg.hid_dim = 64
 cfg.MODEL.TRANS2Seg.nclass = 2
+cfg.MODEL.TRANS2Seg.MASK_WEIGHT = 1
+cfg.MODEL.TRANS2Seg.BOUNDARY_WEIGHT = 1
 
 

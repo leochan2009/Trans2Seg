@@ -1,4 +1,4 @@
-import os
+import os, shutil
 import sys
 import torch
 from subprocess import PIPE, Popen
@@ -67,7 +67,7 @@ def demo():
         cfg.MODEL.MODEL_NAME, cfg.MODEL.BACKBONE, cfg.DATASET.NAME, cfg.TIME_STAMP))
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-
+    shutil.copy(args.config_file, output_dir)
     # image transform
     transform = transforms.Compose([
         transforms.ToTensor(),

@@ -2,8 +2,9 @@ import time
 import copy
 import datetime
 import os
-import sys
+import sys, cv2
 import shutil
+import numpy as np
 
 cur_path = os.path.abspath(os.path.dirname(__file__))
 root_path = os.path.split(cur_path)[0]
@@ -140,6 +141,16 @@ class Trainer(object):
         # evaluation metrics
         self.metric = SegmentationMetric(train_dataset.num_class, args.distributed)
 
+    def get_boundary(self, mask, thicky=8):
+        tmp = mask.data.cpu().numpy().astype('uint8')
+        boundarys = np.zeros([tmp.shape[0],tmp.shape[2], tmp.shape[3]])
+        for imgIdx in range(tmp.shape[0]):
+            contour, _ = cv2.findContours(tmp[imgIdx][1], cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            boundary = np.zeros_like(tmp[imgIdx][1])
+            boundary = cv2.drawContours(boundary, contour, -1, 1, thicky)
+            boundarys[imgIdx] = boundary
+        return boundarys
+
     def train(self):
         self.save_to_disk = get_rank() == 0
         epochs, max_iters, iters_per_epoch = cfg.TRAIN.EPOCHS, self.max_iters, self.iters_per_epoch
@@ -158,18 +169,26 @@ class Trainer(object):
             targets = targets.to(self.device)
             boundarys = boundary.to(self.device)
             images = images[:, :, cfg.TRAIN.ROI_START[0]:cfg.TRAIN.ROI_END[0],
-                    cfg.TRAIN.ROI_START[1]:cfg.TRAIN.ROI_END[1]]
+                     cfg.TRAIN.ROI_START[1]:cfg.TRAIN.ROI_END[1]]
             targets = targets[:, cfg.TRAIN.ROI_START[0]:cfg.TRAIN.ROI_END[0],
-                     cfg.TRAIN.ROI_START[1]:cfg.TRAIN.ROI_END[1]]
+                      cfg.TRAIN.ROI_START[1]:cfg.TRAIN.ROI_END[1]]
             boundarys = boundarys[:, cfg.TRAIN.ROI_START[0]:cfg.TRAIN.ROI_END[0],
-                     cfg.TRAIN.ROI_START[1]:cfg.TRAIN.ROI_END[1]]
-            outputs, outputs_boundary = self.model(images)
+                        cfg.TRAIN.ROI_START[1]:cfg.TRAIN.ROI_END[1]]
+            valid = torch.ones_like(boundarys)
+            if cfg.MODEL.MODEL_NAME == "TransLab":
+                outputs, outputs_boundary = self.model(images)
+                lossb_dict = dict(loss=self.criterion_b(outputs_boundary[0], boundarys, valid))
+                weight_mask = cfg.MODEL.TRANSLAB.MASK_WEIGHT
+                weight_boundary = cfg.MODEL.TRANSLAB.BOUNDARY_WEIGHT
+            elif  cfg.MODEL.MODEL_NAME == "Trans2Seg":
+                weight_mask = cfg.MODEL.TRANS2Seg.MASK_WEIGHT
+                weight_boundary = cfg.MODEL.TRANS2Seg.BOUNDARY_WEIGHT
+                outputs = self.model(images)
+                outputs_boundary = self.get_boundary(outputs[0])
+                lossb_dict = dict(loss=self.criterion_b(torch.from_numpy(outputs_boundary), boundarys.cpu(), valid.cpu()))
             loss_dict = self.criterion(outputs, targets)
             boundarys = boundarys.float()
-            valid = torch.ones_like(boundarys)
-            lossb_dict = dict(loss=self.criterion_b(outputs_boundary[0], boundarys, valid))
-            weight_mask = cfg.MODEL.TRANSLAB.MASK_WEIGHT
-            weight_boundary = cfg.MODEL.TRANSLAB.BOUNDARY_WEIGHT
+
             loss_dict['loss'] = weight_mask * loss_dict['loss']
             lossb_dict['loss'] = weight_boundary * lossb_dict['loss']
 
